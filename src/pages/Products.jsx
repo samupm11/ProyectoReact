@@ -1,9 +1,8 @@
 // src/pages/Products.jsx
 import { useState, useEffect } from 'react';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../services/firebase';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import './Products.css';
 
 function Products() {
@@ -12,7 +11,6 @@ function Products() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const { user } = useAuth();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -38,27 +36,27 @@ function Products() {
   }, []);
 
   useEffect(() => {
-    let filtered = products;
+    let filtered = products || [];
 
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (product) =>
-          product.name.toLowerCase().includes(term) ||
-          product.description.toLowerCase().includes(term)
+          (product?.name?.toLowerCase().includes(term)) ||
+          (product?.description?.toLowerCase().includes(term))
       );
     }
 
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(
-        (product) => product.category === selectedCategory
+        (product) => product?.category === selectedCategory
       );
     }
 
     setFilteredProducts(filtered);
   }, [searchTerm, selectedCategory, products]);
 
-  const categories = ['all', ...new Set(products.map((p) => p.category))];
+  const categories = ['all', ...new Set((products || []).map((p) => p?.category).filter(Boolean))];
 
   return (
     <div className="products-page">
@@ -100,30 +98,30 @@ function Products() {
         </div>
 
         <div className="results-count">
-          {filteredProducts.length} producto{filteredProducts.length !== 1 ? 's' : ''} encontrado{filteredProducts.length !== 1 ? 's' : ''}
+          {(filteredProducts || []).length} producto{(filteredProducts || []).length !== 1 ? 's' : ''} encontrado{(filteredProducts || []).length !== 1 ? 's' : ''}
         </div>
 
         {loading ? (
           <div className="loading">Cargando productos...</div>
-        ) : filteredProducts.length > 0 ? (
+        ) : (filteredProducts || []).length > 0 ? (
           <div className="products-grid">
-            {filteredProducts.map((product) => (
+            {(filteredProducts || []).map((product) => (
               <Link
-                to={`/product/${product.id}`}
-                key={product.id}
+                to={`/product/${product?.id}`}
+                key={product?.id}
                 className="product-card"
               >
                 <div className="product-image">
-                  <img src={product.image} alt={product.name} />
+                  <img src={product?.image || '/placeholder.png'} alt={product?.name || 'Producto'} />
                 </div>
                 <div className="product-info">
-                  <h3>{product.name}</h3>
-                  <p className="product-price">{Number(product.price).toFixed(2)}€</p>
-                  <p className="product-category">{product.category}</p>
+                  <h3>{product?.name || 'Sin nombre'}</h3>
+                  <p className="product-price">{Number(product?.price || 0).toFixed(2)}€</p>
+                  <p className="product-category">{product?.category || 'Sin categoría'}</p>
                   <p className="product-description-short">
-                    {product.description.length > 80
+                    {(product?.description || '').length > 80
                       ? product.description.substring(0, 80) + '...'
-                      : product.description}
+                      : product.description || 'Sin descripción'}
                   </p>
                 </div>
               </Link>
